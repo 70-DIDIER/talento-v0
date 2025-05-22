@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +8,7 @@ import FileUpload from "@/components/FileUpload";
 import DocumentSummary from "@/components/DocumentSummary";
 import QuizGenerator from "@/components/QuizGenerator";
 import QuizInterface from "@/components/QuizInterface";
-import { generateSummaryAPI } from "../lib/deepseek"; // Added
+import { generateSummaryAPI } from "@/lib/deepseek"; // Adjust the import based on your file structure
 
 function App() {
   const [activeDocument, setActiveDocument] = useState(null);

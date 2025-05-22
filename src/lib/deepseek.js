@@ -1,6 +1,6 @@
 // src/lib/deepseek.js
 
-let apiKey = 'YOUR_DEEPSEEK_API_KEY_HERE'; // Placeholder for the API key
+let apiKey = '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'; // Placeholder for the API key
 
 /**
  * Sets the DeepSeek API key.
@@ -29,48 +29,53 @@ export const generateSummaryAPI = async (documentText) => {
   const currentApiKey = getDeepSeekApiKey();
   if (currentApiKey === 'YOUR_DEEPSEEK_API_KEY_HERE' || !currentApiKey) {
     console.error('DeepSeek API Key is not configured.');
-    // It's better to throw an error or return a specific error object
-    // for the caller to handle, rather than just a string.
     throw new Error('DeepSeek API Key is not configured.');
   }
 
-  // Placeholder URL - this will need to be updated with the actual DeepSeek API endpoint
-  const DUMMY_SUMMARY_API_URL = 'https://api.deepseek.com/v1/summarize';
+  // URL de l'API, d'après la doc, nous utilisons le endpoint chat/completions
+  const SUMMARY_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
   try {
-    const response = await fetch(DUMMY_SUMMARY_API_URL, {
+    const response = await fetch(SUMMARY_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${currentApiKey}`,
       },
       body: JSON.stringify({
-        document_text: documentText, // Assuming the API expects a field named 'document_text'
-        // Add other parameters if needed by the API, e.g., summary_length: 'medium'
+        model: 'openai/gpt-4o', // ou le modèle souhaité
+        messages: [
+          {
+            role: 'user',
+            content: documentText, // le contenu de votre document est transmis ici
+          },
+        ],
       }),
     });
 
     if (!response.ok) {
-      // Log more details for debugging if possible
-      const errorData = await response.text(); // or response.json() if the API returns JSON errors
+      const errorData = await response.text();
       console.error('DeepSeek API request failed:', response.status, errorData);
       throw new Error(`API request failed with status ${response.status}`);
     }
 
     const data = await response.json();
 
-    // Adjust this based on the actual API response structure
-    // For example, if the summary is in data.summary or data.choices[0].text
-    if (data && data.summary) {
-      return data.summary;
+    // Vérifiez que la réponse correspond à la structure attendue
+    if (
+      data &&
+      data.choices &&
+      data.choices.length > 0 &&
+      data.choices[0].message &&
+      data.choices[0].message.content
+    ) {
+      return data.choices[0].message.content;
     } else {
       console.error('Unexpected API response structure:', data);
       throw new Error('Failed to parse summary from API response.');
     }
-
   } catch (error) {
     console.error('Error calling DeepSeek summary API:', error);
-    // Re-throw the error so the caller can handle it, or return a specific error object/value
     throw error;
   }
 };
