@@ -1,12 +1,13 @@
-
 import React from "react";
 import { motion } from "framer-motion";
-import { FileText, Copy, Download } from "lucide-react";
+import { FileText, Copy, Download, XCircle } from "lucide-react"; // Added XCircle
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
-const DocumentSummary = ({ document, summary }) => {
+// DocumentSummary now takes `summary` and `onClearSummary`
+// The `originalText` prop can be added later if needed for display.
+const DocumentSummary = ({ summary, onClearSummary }) => {
   const { toast } = useToast();
 
   const handleCopy = () => {
@@ -21,7 +22,8 @@ const DocumentSummary = ({ document, summary }) => {
     const element = document.createElement("a");
     const file = new Blob([summary], { type: "text/plain" });
     element.href = URL.createObjectURL(file);
-    element.download = `résumé_${document.name.split(".")[0]}.txt`;
+    // Since document.name is gone, use a generic name or pass submittedText for a better name
+    element.download = `resume.txt`; 
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -43,7 +45,7 @@ const DocumentSummary = ({ document, summary }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <FileText className="h-5 w-5 text-primary mr-2" />
-              <CardTitle className="text-xl">Résumé du document</CardTitle>
+              <CardTitle className="text-xl">Résumé du texte</CardTitle> {/* Changed title */}
             </div>
             <div className="flex space-x-2">
               <Button
@@ -64,11 +66,22 @@ const DocumentSummary = ({ document, summary }) => {
                 <Download className="h-4 w-4 mr-1" />
                 Télécharger
               </Button>
+              {/* Add a button to clear the summary and go back */}
+              <Button
+                variant="destructive" // Or "outline"
+                size="sm"
+                className="flex items-center"
+                onClick={onClearSummary} 
+              >
+                <XCircle className="h-4 w-4 mr-1" />
+                Nouveau Texte
+              </Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Document: {document.name}
-          </p>
+          {/* Removed document.name paragraph as document prop is gone */}
+          {/* <p className="text-sm text-muted-foreground mt-2">
+            Document: {document.name} 
+          </p> */}
         </CardHeader>
         <CardContent className="p-6">
           <div className="prose max-w-none">

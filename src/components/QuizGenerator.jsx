@@ -1,38 +1,36 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Brain, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { Brain, RefreshCw } from "lucide-react"; // CheckCircle, XCircle removed as they are not used
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { generateQuizAPI } from "../../lib/deepseek"; // Added
+import { generateQuizAPI } from "../../lib/deepseek";
 
-const QuizGenerator = ({ document, summaryForQuiz, onStartQuiz }) => { // Added summaryForQuiz
+// QuizGenerator now only takes `summaryForQuiz` and `onStartQuiz`
+// The `document` prop has been removed.
+const QuizGenerator = ({ summaryForQuiz, onStartQuiz }) => {
   const [numQuestions, setNumQuestions] = useState(5);
   const [difficulty, setDifficulty] = useState("medium");
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  const handleGenerateQuiz = async () => { // Made async
+  const handleGenerateQuiz = async () => {
     if (!summaryForQuiz) {
       toast({
         title: "Erreur",
-        description: "Le résumé du document n'est pas disponible pour générer le quiz.",
+        description: "Le résumé du texte n'est pas disponible pour générer le quiz.", // Changed from "document"
         variant: "destructive",
       });
       return;
     }
     setIsGenerating(true);
     try {
-      // Using summaryForQuiz now.
-      // generateQuizAPI expects the text (summary) first, then numQuestions, then difficulty.
       const quiz = await generateQuizAPI(summaryForQuiz, numQuestions, difficulty);
       
       toast({
         title: "Quiz généré avec succès",
-        // Use actual length from the generated quiz
         description: `${quiz.questions.length} questions ont été créées pour votre quiz "${quiz.title}".`,
       });
       
@@ -62,7 +60,7 @@ const QuizGenerator = ({ document, summaryForQuiz, onStartQuiz }) => { // Added 
             <CardTitle className="text-xl">Générer un quiz</CardTitle>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            Créez un quiz personnalisé basé sur le contenu de votre document
+            Créez un quiz personnalisé basé sur le résumé de votre texte. {/* Changed from "document" */}
           </p>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
@@ -72,9 +70,10 @@ const QuizGenerator = ({ document, summaryForQuiz, onStartQuiz }) => { // Added 
               id="num-questions"
               type="number"
               min="3"
-              max="15" // Increased max questions slightly
+              max="15"
               value={numQuestions}
               onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+              disabled={isGenerating} // Disable input while generating
             />
           </div>
           
@@ -88,6 +87,7 @@ const QuizGenerator = ({ document, summaryForQuiz, onStartQuiz }) => { // Added 
                   variant={difficulty === level ? "default" : "outline"}
                   className="flex-1 capitalize"
                   onClick={() => setDifficulty(level)}
+                  disabled={isGenerating} // Disable buttons while generating
                 >
                   {level === "easy" ? "Facile" : level === "medium" ? "Moyen" : "Difficile"}
                 </Button>
@@ -98,7 +98,7 @@ const QuizGenerator = ({ document, summaryForQuiz, onStartQuiz }) => { // Added 
           <Button
             className="w-full mt-4"
             onClick={handleGenerateQuiz}
-            disabled={isGenerating}
+            disabled={isGenerating || !summaryForQuiz} // Also disable if no summary
           >
             {isGenerating ? (
               <>
