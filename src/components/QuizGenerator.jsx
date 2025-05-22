@@ -7,148 +7,46 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { generateQuizAPI } from "../../lib/deepseek"; // Added
 
-const QuizGenerator = ({ document, onStartQuiz }) => {
+const QuizGenerator = ({ document, summaryForQuiz, onStartQuiz }) => { // Added summaryForQuiz
   const [numQuestions, setNumQuestions] = useState(5);
   const [difficulty, setDifficulty] = useState("medium");
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  const handleGenerateQuiz = () => {
+  const handleGenerateQuiz = async () => { // Made async
+    if (!summaryForQuiz) {
+      toast({
+        title: "Erreur",
+        description: "Le résumé du document n'est pas disponible pour générer le quiz.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsGenerating(true);
-    
-    // Simulate quiz generation delay
-    setTimeout(() => {
-      setIsGenerating(false);
-      
-      // Generate mock quiz questions
-      const quiz = generateMockQuiz(numQuestions, difficulty, document.name);
+    try {
+      // Using summaryForQuiz now.
+      // generateQuizAPI expects the text (summary) first, then numQuestions, then difficulty.
+      const quiz = await generateQuizAPI(summaryForQuiz, numQuestions, difficulty);
       
       toast({
         title: "Quiz généré avec succès",
-        description: `${numQuestions} questions ont été créées pour votre quiz.`,
+        // Use actual length from the generated quiz
+        description: `${quiz.questions.length} questions ont été créées pour votre quiz "${quiz.title}".`,
       });
       
       onStartQuiz(quiz);
-    }, 2000);
-  };
-
-  const generateMockQuiz = (count, difficulty, documentName) => {
-    const difficultyFactors = {
-      easy: "basiques",
-      medium: "intermédiaires",
-      hard: "avancées"
-    };
-    
-    // Mock questions based on common educational topics
-    const questions = [
-      {
-        question: `Quelle est la principale thématique abordée dans le document "${documentName}"?`,
-        options: [
-          "L'analyse des données",
-          "Les méthodes d'apprentissage",
-          "La structure du document",
-          "Les conclusions principales"
-        ],
-        correctAnswer: 1
-      },
-      {
-        question: "Selon le document, quelle méthode est la plus efficace pour mémoriser l'information?",
-        options: [
-          "La répétition espacée",
-          "La lecture passive",
-          "L'apprentissage en une seule session",
-          "La mémorisation par cœur"
-        ],
-        correctAnswer: 0
-      },
-      {
-        question: "Quel concept clé est mentionné comme fondamental dans le document?",
-        options: [
-          "La pratique délibérée",
-          "L'apprentissage collaboratif",
-          "La prise de notes",
-          "La visualisation"
-        ],
-        correctAnswer: 0
-      },
-      {
-        question: "Quelle technique d'étude est recommandée pour les examens à long terme?",
-        options: [
-          "Étudier la veille de l'examen",
-          "Utiliser des fiches de révision",
-          "Réviser en groupe uniquement",
-          "Lire le matériel une seule fois"
-        ],
-        correctAnswer: 1
-      },
-      {
-        question: "Quel est l'avantage principal de la méthode décrite dans la section 3?",
-        options: [
-          "Elle est rapide à mettre en œuvre",
-          "Elle améliore la rétention à long terme",
-          "Elle ne nécessite pas de préparation",
-          "Elle est facile à comprendre"
-        ],
-        correctAnswer: 1
-      },
-      {
-        question: "Selon le document, quel facteur influence le plus la réussite académique?",
-        options: [
-          "L'intelligence innée",
-          "La régularité dans le travail",
-          "La chance",
-          "Le soutien familial"
-        ],
-        correctAnswer: 1
-      },
-      {
-        question: "Quelle stratégie cognitive est présentée comme la plus efficace?",
-        options: [
-          "La mémorisation passive",
-          "L'auto-explication",
-          "La lecture rapide",
-          "L'écoute en cours"
-        ],
-        correctAnswer: 1
-      },
-      {
-        question: "Quel outil numérique est recommandé pour organiser ses révisions?",
-        options: [
-          "Les réseaux sociaux",
-          "Les applications de planification",
-          "Les jeux vidéo éducatifs",
-          "Les forums de discussion"
-        ],
-        correctAnswer: 1
-      },
-      {
-        question: "Quelle approche est suggérée pour gérer le stress avant les examens?",
-        options: [
-          "Étudier davantage",
-          "Pratiquer des techniques de relaxation",
-          "Éviter de dormir",
-          "Consommer des boissons énergisantes"
-        ],
-        correctAnswer: 1
-      },
-      {
-        question: "Quel est le principe fondamental de la méthode d'apprentissage active?",
-        options: [
-          "Mémoriser sans comprendre",
-          "Engager activement son cerveau dans le processus",
-          "Étudier en groupe uniquement",
-          "Éviter les pauses"
-        ],
-        correctAnswer: 1
-      }
-    ];
-    
-    // Return a subset of questions based on the requested count
-    return {
-      title: `Quiz sur ${documentName} - Questions ${difficultyFactors[difficulty]}`,
-      questions: questions.slice(0, count)
-    };
+    } catch (error) {
+      console.error("Failed to generate quiz:", error);
+      toast({
+        title: "Erreur de génération du quiz",
+        description: error.message || "Une erreur est survenue lors de la communication avec l'API.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -174,7 +72,7 @@ const QuizGenerator = ({ document, onStartQuiz }) => {
               id="num-questions"
               type="number"
               min="3"
-              max="10"
+              max="15" // Increased max questions slightly
               value={numQuestions}
               onChange={(e) => setNumQuestions(parseInt(e.target.value))}
             />
