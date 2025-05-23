@@ -1,6 +1,6 @@
 // src/lib/deepseek.js
 
-let apiKey = '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'; // Placeholder for the API key
+let apiKey = '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'; // Placeholder for the API key
 
 /**
  * Sets the DeepSeek API key.
