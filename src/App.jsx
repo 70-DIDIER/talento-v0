@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,12 @@ import DocumentSummary from "@/components/DocumentSummary";
 import QuizGenerator from "@/components/QuizGenerator";
 import QuizInterface from "@/components/QuizInterface";
 import { generateSummaryAPI } from "@/lib/deepseek"; // Added
+
+// Exemple d'extraction de la prop "dismiss" pour éviter de la passer à l'élément <li>
+const ToastItem = ({ dismiss, ...props }) => {
+  // Utilisez "dismiss" dans le composant sans l'émettre dans le JSX final
+  return <li {...props}>{/* contenu du toast */}</li>;
+};
 
 function App() {
   const [activeDocument, setActiveDocument] = useState(null);

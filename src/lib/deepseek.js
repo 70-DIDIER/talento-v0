@@ -23,7 +23,98 @@ export const getDeepSeekApiKey = () => {
   return apiKey;
 };
 
-// Functions for API interactions (generateSummaryAPI, generateQuizAPI) will be added here later.
+/**
+ * Appelle l'API pour générer un quiz basé sur le résumé.
+ * @param {string} summaryText - Le résumé utilisé pour générer le quiz
+ * @param {number} numQuestions - Le nombre de questions souhaité
+ * @param {string} difficulty - Le niveau de difficulté ("easy", "medium", "hard")
+ * @returns {object} - L'objet renvoyé par l'API contenant le quiz
+ */
+export const generateQuizAPI = async (summaryText, numQuestions, difficulty) => {
+  const currentApiKey = getDeepSeekApiKey();
+  if (currentApiKey === 'YOUR_DEEPSEEK_API_KEY_HERE' || !currentApiKey) {
+    console.error('DeepSeek API Key is not configured.');
+    throw new Error('DeepSeek API Key is not configured.');
+  }
+
+  // Remplacez par l'URL de l'API selon votre configuration
+  const QUIZ_API_URL = 'https://api.deepseek.com/v1/generate_quiz';
+
+  try {
+    const response = await fetch(QUIZ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentApiKey}`,
+      },
+      body: JSON.stringify({
+        summary: summaryText,
+        num_questions: numQuestions,
+        difficulty: difficulty,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('DeepSeek quiz API request failed:', response.status, errorData);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error calling DeepSeek quiz API:', error);
+    throw error;
+  }
+};
+
+/**
+ * Appelle l'API pour générer un résumé du document
+ * @param {string} documentText - Le texte du document à résumer
+ * @returns {string} - Le résumé généré par l'API
+ */
+export const generateSummaryAPI = async (documentText) => {
+  const currentApiKey = getDeepSeekApiKey();
+  if (currentApiKey === 'YOUR_DEEPSEEK_API_KEY_HERE' || !currentApiKey) {
+    console.error('DeepSeek API Key is not configured.');
+    throw new Error('DeepSeek API Key is not configured.');
+  }
+
+  const SUMMARY_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+  try {
+    const response = await fetch(SUMMARY_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4o',
+        messages: [{
+          role: 'user',
+          content: documentText,
+        }],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('DeepSeek API request failed:', response.status, errorData);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data && data.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content;
+    } else {
+      throw new Error('Invalid API response structure.');
+    }
+  } catch (error) {
+    console.error('Error calling DeepSeek summary API:', error);
+    throw error;
+  }
+};
 
 /**
  * Compresse un texte en supprimant les espaces superflus et en réduisant la longueur
