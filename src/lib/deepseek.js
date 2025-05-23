@@ -1,6 +1,6 @@
 // src/lib/deepseek.js
 
-let apiKey = 'YOUR_DEEPSEEK_API_KEY_HERE'; // Placeholder for the API key
+let apiKey = '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'; // Placeholder for the API key
 
 /**
  * Sets the DeepSeek API key.
@@ -25,143 +25,159 @@ export const getDeepSeekApiKey = () => {
 
 // Functions for API interactions (generateSummaryAPI, generateQuizAPI) will be added here later.
 
-export const generateSummaryAPI = async (documentText) => {
-  const currentApiKey = getDeepSeekApiKey();
-  if (currentApiKey === 'YOUR_DEEPSEEK_API_KEY_HERE' || !currentApiKey) {
-    console.error('DeepSeek API Key is not configured.');
-    // It's better to throw an error or return a specific error object
-    // for the caller to handle, rather than just a string.
-    throw new Error('DeepSeek API Key is not configured.');
-  }
-
-  // Placeholder URL - this will need to be updated with the actual DeepSeek API endpoint
-  const DUMMY_SUMMARY_API_URL = 'https://api.deepseek.com/v1/summarize';
-
-  try {
-    const response = await fetch(DUMMY_SUMMARY_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${currentApiKey}`,
-      },
-      body: JSON.stringify({
-        document_text: documentText, // Assuming the API expects a field named 'document_text'
-        // Add other parameters if needed by the API, e.g., summary_length: 'medium'
-      }),
-    });
-
-    if (!response.ok) {
-      // Log more details for debugging if possible
-      const errorData = await response.text(); // or response.json() if the API returns JSON errors
-      console.error('DeepSeek API request failed:', response.status, errorData);
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Adjust this based on the actual API response structure
-    // For example, if the summary is in data.summary or data.choices[0].text
-    if (data && data.summary) {
-      return data.summary;
-    } else {
-      console.error('Unexpected API response structure:', data);
-      throw new Error('Failed to parse summary from API response.');
-    }
-
-  } catch (error) {
-    console.error('Error calling DeepSeek summary API:', error);
-    // Re-throw the error so the caller can handle it, or return a specific error object/value
-    throw error;
-  }
+/**
+ * Compresse un texte en supprimant les espaces superflus et en réduisant la longueur
+ * @param {string} text - Le texte à compresser
+ * @returns {string} - Le texte compressé
+ */
+const compressText = (text) => {
+  return text
+    .replace(/\s+/g, ' ') // Remplace les espaces multiples par un seul espace
+    .replace(/\n+/g, ' ') // Remplace les retours à la ligne par un espace
+    .trim();
 };
 
-export const generateQuizAPI = async (documentText, numQuestions, difficulty) => {
-  const currentApiKey = getDeepSeekApiKey();
-  if (currentApiKey === 'YOUR_DEEPSEEK_API_KEY_HERE' || !currentApiKey) {
-    console.error('DeepSeek API Key is not configured.');
-    throw new Error('DeepSeek API Key is not configured.');
-  }
-
-  // Placeholder URL for quiz generation
-  const DUMMY_QUIZ_API_URL = 'https://api.deepseek.com/v1/generate_quiz';
-
-  try {
-    const response = await fetch(DUMMY_QUIZ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${currentApiKey}`,
-      },
-      body: JSON.stringify({
-        text_content: documentText, // or summary_text as per prompt
-        num_questions: numQuestions,
-        difficulty: difficulty, // e.g., "easy", "medium", "hard"
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text(); // or response.json() if API returns JSON errors
-      console.error('DeepSeek Quiz API request failed:', response.status, errorData);
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
-    const apiResponse = await response.json();
-
-    // Assumed API response structure (as per subtask description):
-    // {
-    //   "title": "Generated Quiz Title",
-    //   "questions_data": [
-    //     {
-    //       "question_text": "Example question 1?",
-    //       "answers": [
-    //         {"text": "Option A", "is_correct": false},
-    //         {"text": "Option B", "is_correct": true},
-    //         {"text": "Option C", "is_correct": false}
-    //       ]
-    //     },
-    //     // ... more questions
-    //   ]
-    // }
-
-    if (!apiResponse || !apiResponse.title || !Array.isArray(apiResponse.questions_data)) {
-      console.error('Unexpected API response structure for quiz:', apiResponse);
-      throw new Error('Failed to parse quiz from API response due to unexpected structure.');
-    }
-
-    const transformedQuiz = {
-      title: apiResponse.title,
-      questions: apiResponse.questions_data.map(q_data => {
-        if (!q_data.question_text || !Array.isArray(q_data.answers) || q_data.answers.length === 0) {
-          console.error('Invalid question structure in API response:', q_data);
-          // Potentially skip this question or handle more gracefully
-          throw new Error('Invalid question data in API response.');
-        }
-        const options = q_data.answers.map(ans => ans.text);
-        const correctAnswerIndex = q_data.answers.findIndex(ans => ans.is_correct);
-
-        if (correctAnswerIndex === -1) {
-          console.error('Correct answer not found in question data:', q_data);
-          // Potentially skip this question or handle more gracefully
-          throw new Error('Correct answer missing in question data from API.');
-        }
-
-        return {
-          question: q_data.question_text,
-          options: options,
-          correctAnswer: correctAnswerIndex,
-        };
-      }),
-    };
-
-    return transformedQuiz;
-
-  } catch (error) {
-    console.error('Error calling DeepSeek quiz API:', error);
-    // Re-throw the error, ensuring it's an Error object for consistent error handling
-    if (error instanceof Error) {
-      throw error;
+/**
+ * Divise un texte en morceaux plus petits pour respecter la limite de tokens
+ * @param {string} text - Le texte à diviser
+ * @param {number} maxTokens - Le nombre maximum de tokens par morceau
+ * @returns {string[]} - Un tableau de morceaux de texte
+ */
+const splitTextIntoChunks = (text, maxTokens = 5000) => {
+  // Une estimation très conservatrice : 1 token ≈ 2.5 caractères
+  const charsPerChunk = maxTokens * 2.5;
+  const chunks = [];
+  
+  // Compresser le texte avant de le diviser
+  const compressedText = compressText(text);
+  
+  for (let i = 0; i < compressedText.length; i += charsPerChunk) {
+    const chunk = compressedText.slice(i, i + charsPerChunk);
+    // Vérification supplémentaire pour s'assurer que le chunk n'est pas trop grand
+    if (chunk.length > 12500) { // 5000 tokens * 2.5 caractères
+      console.warn('Chunk size exceeds safe limit, truncating...');
+      chunks.push(chunk.slice(0, 12500));
     } else {
-      throw new Error(String(error));
+      chunks.push(chunk);
     }
   }
+  
+  return chunks;
+};
+
+/**
+ * Vérifie si le texte contient des données binaires
+ * @param {string} text - Le texte à vérifier
+ * @returns {boolean} - True si le texte contient des données binaires
+ */
+const containsBinaryData = (text) => {
+  // Vérifie la présence de caractères non imprimables ou de séquences binaires courantes
+  const binaryPatterns = [
+    /PK\x03\x04/, // Signature ZIP/DOCX
+    /\x00/, // Caractères nuls
+    /[\x00-\x08\x0B\x0C\x0E-\x1F]/, // Caractères de contrôle
+    /%PDF/, // Signature PDF
+  ];
+  
+  return binaryPatterns.some(pattern => pattern.test(text));
+};
+
+/**
+ * Nettoie le texte en supprimant les données binaires et en gardant uniquement le texte lisible
+ * @param {string} text - Le texte à nettoyer
+ * @returns {string} - Le texte nettoyé
+ */
+const cleanText = (text) => {
+  // Supprime les caractères non imprimables
+  let cleaned = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  
+  // Supprime les séquences binaires courantes
+  cleaned = cleaned.replace(/PK\x03\x04.*?(?=\w)/g, '');
+  cleaned = cleaned.replace(/%PDF.*?(?=\w)/g, '');
+  
+  // Supprime les lignes qui ne contiennent que des caractères spéciaux
+  cleaned = cleaned.split('\n')
+    .filter(line => /[a-zA-ZÀ-ÿ]/.test(line)) // Garde uniquement les lignes avec des lettres
+    .join('\n');
+  
+  return cleaned;
+};
+
+const removePdfMetaAndTech = (text) => {
+  // Liste de mots-clés à filtrer
+  const patterns = [
+    /^\s*\/Author.*/i,
+    /^\s*\/Creator.*/i,
+    /^\s*\/CreationDate.*/i,
+    /^\s*\/ModDate.*/i,
+    /^\s*\/Producer.*/i,
+    /^\s*\/Title.*/i,
+    /^\s*\/Font.*/i,
+    /^\s*\/Type.*/i,
+    /^\s*\/Obj.*/i,
+    /^\s*\/Root.*/i,
+    /^\s*\/Pages.*/i,
+    /^\s*\/Kids.*/i,
+    /^\s*\/Count.*/i,
+    /^\s*\/MediaBox.*/i,
+    /^\s*\/Parent.*/i,
+    /^\s*\/Resources.*/i,
+    /^\s*\/Contents.*/i,
+    /^\s*\/Filter.*/i,
+    /^\s*\/Length.*/i,
+    /^\s*\/Subtype.*/i,
+    /^\s*\/BaseFont.*/i,
+    /^\s*\/Encoding.*/i,
+    /^\s*\/FontDescriptor.*/i,
+    /^\s*\/FontFile.*/i,
+    /^\s*\/Descent.*/i,
+    /^\s*\/Ascent.*/i,
+    /^\s*\/CapHeight.*/i,
+    /^\s*\/Flags.*/i,
+    /^\s*\/ItalicAngle.*/i,
+    /^\s*\/StemV.*/i,
+    /^\s*\/XHeight.*/i,
+    /^\s*\/Widths.*/i,
+    /^\s*\/ToUnicode.*/i,
+    /^\s*\/FontBBox.*/i,
+    /^\s*\/ExtGState.*/i,
+    /^\s*\/ProcSet.*/i,
+    /^\s*\/Annots.*/i,
+    /^\s*\/StructTreeRoot.*/i,
+    /^\s*\/MarkInfo.*/i,
+    /^\s*\/Metadata.*/i,
+    /^\s*\/PieceInfo.*/i,
+    /^\s*\/LastModified.*/i,
+    /^\s*\/Trapped.*/i,
+    /^\s*\/ID.*/i,
+    /^\s*\/Info.*/i,
+    /^\s*\/Linearized.*/i,
+    /^\s*\/Outlines.*/i,
+    /^\s*\/PageLayout.*/i,
+    /^\s*\/PageMode.*/i,
+    /^\s*\/Perms.*/i,
+    /^\s*\/ViewerPreferences.*/i,
+    /^\s*\/Names.*/i,
+    /^\s*\/Dests.*/i,
+    /^\s*\/OpenAction.*/i,
+    /^\s*\/AA.*/i,
+    /^\s*\/AcroForm.*/i,
+    /^\s*\/Threads.*/i,
+    /^\s*\/FDF.*/i,
+    /^\s*\/Type.*/i,
+    /^\s*\/StructParents.*/i,
+    /^\s*\/StructParent.*/i,
+    /^\s*\/MarkInfo.*/i,
+    /^\s*\/Lang.*/i,
+    /^\s*\/SpiderInfo.*/i,
+    /^\s*\/OutputIntents.*/i
+  ];
+
+  // Appliquer les patterns pour nettoyer le texte
+  let cleanedText = text;
+  patterns.forEach(pattern => {
+    cleanedText = cleanedText.replace(pattern, '');
+  });
+
+  return cleanedText;
 };

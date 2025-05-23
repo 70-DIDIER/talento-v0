@@ -9,7 +9,7 @@ import FileUpload from "@/components/FileUpload";
 import DocumentSummary from "@/components/DocumentSummary";
 import QuizGenerator from "@/components/QuizGenerator";
 import QuizInterface from "@/components/QuizInterface";
-import { generateSummaryAPI } from "../lib/deepseek"; // Added
+import { generateSummaryAPI } from "@/lib/deepseek"; // Added
 
 function App() {
   const [activeDocument, setActiveDocument] = useState(null);

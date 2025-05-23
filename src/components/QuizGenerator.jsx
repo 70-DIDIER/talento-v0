@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { generateQuizAPI } from "../../lib/deepseek"; // Added
+import { generateQuizAPI } from "@/lib/deepseek"; // Added
 
 const QuizGenerator = ({ document, summaryForQuiz, onStartQuiz }) => { // Added summaryForQuiz
   const [numQuestions, setNumQuestions] = useState(5);
