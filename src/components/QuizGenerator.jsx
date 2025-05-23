@@ -57,7 +57,7 @@ const QuizGenerator = ({ summaryForQuiz, onStartQuiz }) => {
         <CardHeader className="bg-primary/10 pb-4">
           <div className="flex items-center">
             <Brain className="h-5 w-5 text-primary mr-2" />
-            <CardTitle className="text-xl">Générer un quiz</CardTitle>
+            <CardTitle className="text-xl">Générer un QCM</CardTitle>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             Créez un quiz personnalisé basé sur le résumé de votre texte. {/* Changed from "document" */}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Textarea } from '@/components/ui/textarea'; // Assuming you have a Textarea component from shadcn/ui
-import { Button } from '@/components/ui/button';
-import { Paperclip, Send } from 'lucide-react'; // Send icon for submit, Paperclip might be removed or repurposed
+import { Textarea } from './ui/textarea';
+import { Button } from './ui/button';
+import { Paperclip, Send, RefreshCw } from 'lucide-react';
 
 const TextInputArea = ({ onTextSubmit, isLoading }) => {
   const [text, setText] = useState('');
@@ -49,27 +49,5 @@ const TextInputArea = ({ onTextSubmit, isLoading }) => {
     </div>
   );
 };
-
-// Helper component for the spinner icon, if not already globally available
-const RefreshCw = (props) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M21 2v6h-6" />
-    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-    <path d="M3 22v-6h6" />
-    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-  </svg>
-);
-
 
 export default TextInputArea;

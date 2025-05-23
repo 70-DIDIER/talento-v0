@@ -17,7 +17,7 @@ const Header = () => {
           transition={{ duration: 0.5 }}
         >
           <BookOpen className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Talento</span>
+          <span className="text-xl font-bold">TalentoAI</span>
         </motion.div>
 
         {/* Mobile menu button */}
